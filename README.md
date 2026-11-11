@@ -1,5 +1,20 @@
 # GBForge — ゲームボーイ版の Unity みたいなもの
 
+## ダウンロード (Windows 10 / 11, 64bit)
+
+| ファイル | 内容 |
+|---|---|
+| [**GBForge-0.1.0-Setup.exe**](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.1.0-Setup.exe) (25 MB) | 完全版インストーラー (おすすめ)。エミュレータ入り |
+| [GBForge-0.1.0-lite-Setup.exe](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.1.0-lite-Setup.exe) (13 MB) | 軽量版インストーラー。エミュレータなし |
+
+使い方:
+
+1. リンクをクリックして保存します
+2. 保存したファイルを実行します
+3. 「Windows によって PC が保護されました」と出たら、**詳細情報 → 実行** を押します
+
+チェックサムは [SHA256SUMS.txt](download/SHA256SUMS.txt) にあります。
+
 GBForge はゲームボーイ (DMG) 用のゲームエンジンとエディタです。
 
 - **コンパイラは GBDK-2020** を使います。エンジンは C で書かれていて、ユーザーのスクリプトも C で書きます
