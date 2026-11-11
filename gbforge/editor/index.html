@@ -159,7 +159,7 @@
             <div class="comp-title">新しいバージョンとして保存</div>
             <div class="hint">今のフォルダを丸ごとコピーして次の版のフォルダを作ります (今までの「_v1.9 → _v2.0」と同じ運用)。zip も一緒に作れます。</div>
             <div class="row"><input id="verName" class="mono" style="flex:1"><select id="verSuggest"></select></div>
-            <label class="check"><input type="checkbox" id="verZip" checked> &lt;名前&gt;_source.zip も作る</label>
+            <label class="check"><input type="checkbox" id="verZip" checked> zip も作る (今までと同じ名前の付け方: 例 HighwayStar_GBC_v2.1.zip)</label>
             <label class="check"><input type="checkbox" id="verOpen" checked> 保存後に新しいバージョンを開く</label>
             <div><button id="btnVerSave" class="play">保存</button></div>
           </div>
@@ -238,18 +238,37 @@
     <div class="row"><button id="adOk" class="play">このフォルダを開く</button><button id="adCancel">キャンセル</button></div>
   </div>
 </div>
+<div id="browser" class="modal hidden">
+  <div class="modal-box wide browser-box">
+    <h3>フォルダを選ぶ</h3>
+    <div class="row br-places" id="brPlaces"></div>
+    <div class="row"><button id="brUp" class="tiny">↑ 上へ</button><code id="brPath" class="br-path"></code></div>
+    <ul id="brList" class="list br-list"></ul>
+    <div class="hint">🎮 = GBDK のプロジェクト (C ソースと build.bat があるフォルダ)。ダブルクリックで中に入ります。</div>
+    <div class="row space">
+      <label class="check"><input type="checkbox" id="brRemember" checked> このフォルダの親をプロジェクトの場所として覚える</label>
+      <div class="row"><button id="brCancel">キャンセル</button><button id="brOpen" class="play" disabled>このプロジェクトを開く</button></div>
+    </div>
+  </div>
+</div>
 <div id="home" class="home hidden">
   <div class="home-box">
     <h1><span class="logo">▣</span> GBForge</h1>
     <p class="muted">ゲームボーイ用ゲームエンジン — GBDK-2020 / 日本語フォント / ロムライタ 統合環境</p>
     <div id="homeStatus" class="home-status"></div>
+    <section class="proj-finder">
+      <div class="row space"><h3>あなたの GBDK プロジェクト</h3>
+        <div class="row"><button id="btnBrowse" class="play">📂 フォルダを選んで開く…</button><button id="btnRescan" class="tiny">再検索</button></div></div>
+      <div class="hint">GBDK の Project フォルダ (例: C:\gbdk-win64\gbdk\Project) を自動で探して、同じゲームの版 (v0.3 … v2.0) をまとめて表示します。「開く」を押すだけでリンクできます。</div>
+      <div id="projGroups" class="proj-groups"><div class="muted">探しています…</div></div>
+    </section>
     <div class="home-cols">
       <section>
-        <h3>最近のプロジェクト</h3>
+        <h3>最近開いたもの</h3>
         <ul id="recentList" class="list home-list"></ul>
-        <h3>フォルダを開く</h3>
-        <div class="inline"><input id="openPath" class="mono" placeholder="例: C:\gbdk-win64\gbdk\Project\HighwayStar_GBC_v1.9_HW"> <button id="btnOpen">開く</button></div>
-        <div class="hint">GBForge のプロジェクトでも、今まで作ってきた GBDK のフォルダ (main.c と build.bat がある所) でも開けます。</div>
+        <details class="adv"><summary>パスを直接入力して開く</summary>
+          <div class="inline"><input id="openPath" class="mono" placeholder="例: C:\gbdk-win64\gbdk\Project\HighwayStar_GBC_v2.0"> <button id="btnOpen">開く</button></div>
+        </details>
       </section>
       <section>
         <h3>新しいプロジェクト</h3>

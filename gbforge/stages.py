@@ -214,6 +214,11 @@ def export(p: Project, log=print, write_arrays: bool = False, only: str | None =
         c.append("")
     c.append("const stage_t *const stages[STAGE_COUNT] = { " + ", ".join(f"&stage_{_c_ident(n)}" for n, _ in gen) + " };")
     h += ["extern const stage_t *const stages[STAGE_COUNT];", "", "#endif", ""]
+    from .adopt import is_foreign
+    for f in (out_dir / f"{out_name}.c", out_dir / f"{out_name}.h"):
+        if is_foreign(f):
+            raise ProjectError(f"{f.name} は GBForge 以外で作られたファイルなので上書きしません。"
+                               "設定の「ステージの出力ファイル名」を別の名前 (例: gbforge_stages) にしてください")
     (out_dir / f"{out_name}.h").write_text("\n".join(h), encoding="utf-8")
     (out_dir / f"{out_name}.c").write_text("\n".join(c) + "\n", encoding="utf-8")
     written += [out_dir / f"{out_name}.c", out_dir / f"{out_name}.h"]

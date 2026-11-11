@@ -884,8 +884,79 @@ async function installGbdk() {
   await runJob('/api/gbdk/install', {}, 'GBDK-2020 をセットアップ中');
 }
 
+async function scanProjects() {
+  const box = $('#projGroups');
+  box.innerHTML = '<div class="muted">探しています…</div>';
+  let r;
+  try { r = await api('GET', '/api/projects/scan'); } catch (e) { box.textContent = e.message; return; }
+  box.innerHTML = '';
+  if (!r.roots.length) {
+    box.append(h('div', { class: 'muted' }, 'GBDK のプロジェクトフォルダが見つかりませんでした。「📂 フォルダを選んで開く…」から選んでください。'));
+    return;
+  }
+  for (const root of r.roots) {
+    box.append(h('div', { class: 'proj-root' }, '📁 ' + root.root));
+    for (const g of root.groups) {
+      const latest = g.latest;
+      const sel = h('select', { title: '版を選んで開く' }, h('option', { value: '' }, `全 ${g.versions.length} 版から選ぶ…`),
+        ...g.versions.slice().reverse().map((v) => h('option', { value: v.path }, `${v.folder}${v.nested ? ' (中のフォルダ)' : ''}${v.is_project ? ' ★' : ''}`)));
+      sel.onchange = () => { if (sel.value) openProject(sel.value); };
+      box.append(h('div', { class: 'pg' },
+        h('div', { class: 'pg-name' }, g.name),
+        h('div', { class: 'pg-latest' }, h('span', { title: latest.path }, '最新: ' + latest.folder),
+          h('button', { class: 'play tiny', onclick: () => openProject(latest.path) }, '開く')),
+        g.versions.length > 1 ? sel : null));
+    }
+  }
+}
+
+/* ---- フォルダブラウザ ---- */
+const BR = { path: null, sel: null, parent: null };
+async function openBrowser(start) {
+  $('#browser').classList.remove('hidden');
+  const r = await api('GET', '/api/fs/roots');
+  const pl = $('#brPlaces');
+  pl.innerHTML = '';
+  r.drives.forEach((d) => pl.append(h('button', { onclick: () => browseTo(d) }, '💽 ' + d)));
+  r.places.forEach((p) => pl.append(h('button', { onclick: () => browseTo(p.path), title: p.path }, '📁 ' + p.name)));
+  browseTo(start || (r.places[r.places.length - 1] || r.places[0]).path);
+}
+async function browseTo(path) {
+  let r;
+  try { r = await api('GET', '/api/fs/list?path=' + encodeURIComponent(path)); } catch (e) { alert(e.message); return; }
+  BR.path = r.path; BR.parent = r.parent; BR.sel = r.is_project ? r.path : null;
+  $('#brPath').textContent = r.path;
+  $('#brOpen').disabled = !BR.sel;
+  const ul = $('#brList');
+  ul.innerHTML = '';
+  if (!r.entries.length) ul.append(h('li', { class: 'muted' }, '(フォルダがありません)'));
+  r.entries.forEach((e) => {
+    const li = h('li', { title: e.project || e.path },
+      h('span', {}, (e.project ? '🎮 ' : '📁 ') + e.name), e.project ? h('span', { class: 'tag' }, e.nested ? 'GBDK プロジェクト (中のフォルダ)' : 'GBDK プロジェクト') : null);
+    li.onclick = () => { $$('#brList li').forEach((x) => x.classList.toggle('sel', x === li)); BR.sel = e.project; $('#brOpen').disabled = !BR.sel; };
+    li.ondblclick = () => (e.project && !e.nested ? openFromBrowser(e.project) : browseTo(e.path));
+    ul.append(li);
+  });
+}
+function parentOf(p) {
+  const s = p.replace(/[\\/]+$/, '');
+  const i = Math.max(s.lastIndexOf('\\'), s.lastIndexOf('/'));
+  return i > 0 ? s.slice(0, i) : s;
+}
+async function openFromBrowser(path) {
+  if ($('#brRemember').checked) {
+    let parent = parentOf(path);
+    const name = path.replace(/[\\/]+$/, '').split(/[\\/]/).pop();
+    if (parent.split(/[\\/]/).pop() === name) parent = parentOf(parent);   // X\X は X の親
+    try { await api('POST', '/api/project_roots', { path: parent }); } catch (e) { /* */ }
+  }
+  $('#browser').classList.add('hidden');
+  openProject(path);
+}
+
 async function showHome() {
   $('#home').classList.remove('hidden');
+  scanProjects();
   const r = await api('GET', '/api/home');
   const ul = $('#recentList');
   ul.innerHTML = '';
@@ -919,6 +990,11 @@ function setup() {
   $('#newType').onchange = () => { const c = $('#newType').value === 'c'; $('#newTargetRow').classList.toggle('hidden', !c); $('#newSampleRow').classList.toggle('hidden', c); };
   $('#btnClose').onclick = async () => { await saveAll(true); await api('POST', '/api/close'); location.reload(); };
   $('#btnOpen').onclick = () => openProject($('#openPath').value.trim());
+  $('#btnBrowse').onclick = () => openBrowser();
+  $('#btnRescan').onclick = () => scanProjects();
+  $('#brUp').onclick = () => { if (BR.parent) browseTo(BR.parent); };
+  $('#brCancel').onclick = () => $('#browser').classList.add('hidden');
+  $('#brOpen').onclick = () => { if (BR.sel) openFromBrowser(BR.sel); };
   $('#btnCreate').onclick = async () => {
     try {
       await api('POST', '/api/create', { path: $('#newPath').value.trim(), name: $('#newName').value.trim(), sample: $('#newSample').checked,

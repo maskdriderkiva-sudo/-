@@ -155,3 +155,46 @@ def test_adopt_build_stage_and_versions(legacy):
     assert (Path(r["path"]) / "assets.c").exists() and Path(r["zip"]).exists()
     names = [v["name"] for v in versions.siblings(legacy)]
     assert "Game_v1.9_HW" in names and "Game_v2.0" in names
+
+
+def test_find_projects_nested_and_protect_own_files(tmp_path, monkeypatch):
+    """Project フォルダの自動検出・二重フォルダ (X\\X)・自作 stage_data.c の保護・版の保存。"""
+    from gbforge import browse
+    monkeypatch.setenv("GBFORGE_HOME", str(tmp_path / "home"))
+    root = tmp_path / "gbdk" / "Project"
+    for name in ("Game_v1.0", "Game_v1.9_HW"):
+        d = root / name
+        d.mkdir(parents=True)
+        (d / "main.c").write_text("void main(void){}\n")
+        (d / "build.bat").write_text("lcc -o game.gb main.c\r\n")
+    inner = root / "Game_v2.0" / "Game_v2.0"            # zip 展開で二重になったフォルダ
+    inner.mkdir(parents=True)
+    (inner / "main.c").write_text("void main(void){}\n")
+    (inner / "build.bat").write_text("lcc -o game.gb main.c stage_data.c\r\n")
+    (inner / "stage_data.c").write_text("// 自作\nconst unsigned char my_stage[2] = {1, 2};\n")
+    (root / "Game_v2.0.zip").write_bytes(b"PK")
+    (root / "NotAProject").mkdir()
+
+    groups = browse.scan_projects([root])[0]["groups"]
+    assert [g["name"] for g in groups] == ["Game"]
+    vers = {v["folder"]: v for v in groups[0]["versions"]}
+    assert set(vers) == {"Game_v1.0", "Game_v1.9_HW", "Game_v2.0"}
+    assert vers["Game_v2.0"]["nested"] and vers["Game_v2.0"]["path"] == str(inner)
+    assert browse.list_dir(str(root))["entries"][0]["project"]
+
+    # 外側のフォルダを指定しても中を開く / 自作の stage_data.c は上書きしない
+    p = adopt.adopt(root / "Game_v2.0")
+    assert p.root == inner and p.settings["stages_output"] == "gbforge_stages"
+    p.settings["stages_output"] = "stage_data"
+    stages.create_new(p, "s1", 20, 18, {}, False)
+    with pytest.raises(Exception, match="上書きしません"):
+        stages.export(p, lambda m: None)
+    assert "my_stage" in (inner / "stage_data.c").read_text()
+
+    # 版: 兄弟は外側のフォルダ基準、新しい版は Project 直下に X.zip 形式で
+    names = [s["name"] for s in versions.siblings(inner)]
+    assert {"Game_v1.0", "Game_v1.9_HW", "Game_v2.0"} <= set(names)
+    assert versions.suggest_next(inner)[0] == "Game_v2.1"
+    r = versions.save_new_version(inner, "Game_v2.1")
+    assert Path(r["path"]) == root / "Game_v2.1" and (root / "Game_v2.1" / "main.c").exists()
+    assert Path(r["zip"]).name == "Game_v2.1.zip"

@@ -415,6 +415,10 @@ def save_c(res: Converted, out_dir: Path, bank: int | None = None) -> list[Path]
     c, hh = to_c(res, bank)
     n = re.sub(r"\W", "_", res.name)
     out_dir.mkdir(parents=True, exist_ok=True)
+    from .adopt import is_foreign
+    for f in (out_dir / f"{n}.c", out_dir / f"{n}.h"):
+        if is_foreign(f):
+            raise ConvertError(f"{f.name} は既にあり、GBForge で作ったファイルではないので上書きしません。出力名を変えてください")
     (out_dir / f"{n}.c").write_text(c, encoding="utf-8")
     (out_dir / f"{n}.h").write_text(hh, encoding="utf-8")
     return [out_dir / f"{n}.c", out_dir / f"{n}.h"]

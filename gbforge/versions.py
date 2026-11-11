@@ -25,9 +25,17 @@ def fmt(ver: tuple[int, ...]) -> str:
     return ".".join(str(v) for v in ver)
 
 
-def siblings(folder: Path) -> list[dict]:
-    """同じ名前 (_v 番号違い) のフォルダを古い順に。"""
+def outer_folder(folder: Path) -> Path:
+    """X\\X (zip を展開して二重になったフォルダ) なら外側の X を返す。"""
     folder = Path(folder).resolve()
+    return folder.parent if folder.parent.name == folder.name else folder
+
+
+def siblings(folder: Path) -> list[dict]:
+    """同じ名前 (_v 番号違い) のフォルダを古い順に。path は中の本当のプロジェクトフォルダ。"""
+    from .browse import resolve_project_dir
+    cur = Path(folder).resolve()
+    folder = outer_folder(cur)
     base, _, _ = parse(folder.name)
     out = []
     for d in folder.parent.iterdir():
@@ -36,16 +44,17 @@ def siblings(folder: Path) -> list[dict]:
         b, ver, suffix = parse(d.name)
         if b != base and d.name != base:
             continue
-        out.append({"name": d.name, "path": str(d), "version": fmt(ver) if ver else "", "suffix": suffix,
-                    "current": d == folder, "mtime": d.stat().st_mtime,
-                    "is_project": (d / "project.gbproj").exists()})
+        proj = resolve_project_dir(d) or d
+        out.append({"name": d.name, "path": str(proj), "version": fmt(ver) if ver else "", "suffix": suffix,
+                    "current": d == folder, "mtime": d.stat().st_mtime, "nested": proj != d,
+                    "is_project": (proj / "project.gbproj").exists()})
     out.sort(key=lambda x: x["mtime"])
     return out
 
 
 def suggest_next(folder: Path) -> list[str]:
     """次のバージョン名の候補 (小さい更新 / 大きい更新)。"""
-    folder = Path(folder).resolve()
+    folder = outer_folder(folder)
     base, ver, suffix = parse(folder.name)
     existing = {s["name"] for s in siblings(folder)}
     allv = [parse(s["name"])[1] for s in siblings(folder) if parse(s["name"])[1]]
@@ -66,16 +75,19 @@ def suggest_next(folder: Path) -> list[str]:
 
 
 def save_new_version(folder: Path, new_name: str, make_zip: bool = True) -> dict:
-    folder = Path(folder).resolve()
+    folder = Path(folder).resolve()           # 中の本当のプロジェクトフォルダ (これをコピー)
+    outer = outer_folder(folder)               # 兄弟の版が並んでいる場所はこの親
     if not re.fullmatch(r"[\w.\-]+", new_name):
         raise ValueError("フォルダ名に使えない文字があります")
-    dest = folder.parent / new_name
+    dest = outer.parent / new_name
     if dest.exists():
         raise FileExistsError(f"{dest} は既にあります")
     shutil.copytree(folder, dest, ignore=COPY_IGNORE)
     result = {"path": str(dest), "zip": None}
     if make_zip:
-        z = folder.parent / f"{new_name}_source.zip"
+        # 今までの zip の付け方に合わせる (X.zip か X_source.zip)
+        style_plain = (outer.parent / f"{outer.name}.zip").exists()
+        z = outer.parent / (f"{new_name}.zip" if style_plain else f"{new_name}_source.zip")
         with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as zf:
             for f in sorted(dest.rglob("*")):
                 rel = f.relative_to(dest.parent)

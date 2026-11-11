@@ -37,6 +37,10 @@ def inspect(folder: Path) -> dict:
     folder = Path(folder).expanduser().resolve()
     if not folder.is_dir():
         raise FileNotFoundError(f"フォルダがありません: {folder}")
+    from .browse import resolve_project_dir
+    inner = resolve_project_dir(folder)
+    if inner and inner != folder:
+        folder = inner          # zip 展開で二重になったフォルダ (X\X) は中を使う
     c_files = [f for f in folder.rglob("*.c") if not (SKIP_DIRS & set(f.relative_to(folder).parts))]
     h_files = [f for f in folder.rglob("*.h") if not (SKIP_DIRS & set(f.relative_to(folder).parts))]
     pngs = [f for f in folder.rglob("*.png") if not (SKIP_DIRS & set(f.relative_to(folder).parts))]
@@ -99,6 +103,11 @@ def adopt(folder: Path, info: dict | None = None, overrides: dict | None = None)
     })
     s["flasher"]["mbc"] = "ROM"        # ROM ヘッダーのカートリッジ種別に合わせる
     s["jpfont"]["mode"] = "scan"
+    # 自分で作った stage_data.c などを上書きしないよう、出力名がぶつかるときは別名にする
+    for cand in ("stage_data", "gbforge_stages", "gbforge_stage_data"):
+        if not is_foreign(folder / f"{cand}.c") and not is_foreign(folder / f"{cand}.h"):
+            s["stages_output"] = cand
+            break
     s["object_types"] = [
         {"name": "enemy", "color": "#e5484d", "fields": ["speed", "kind"]},
         {"name": "item", "color": "#f5d90a", "fields": ["value"]},
@@ -146,3 +155,17 @@ def add_to_build_scripts(p: Project, files: list[str]) -> list[str]:
             s.write_bytes(("\r\n" if crlf else "\n").join(lines).encode("latin-1"))
             changed.append(s.name)
     return changed
+
+
+GENERATED_MARKERS = ("GBForge ステージエディタで自動生成", "GBForge 変換ツールで生成")
+
+
+def is_foreign(path: Path) -> bool:
+    """ファイルが存在し、GBForge が作ったものではない (= 上書きしてはいけない)。"""
+    if not path.exists():
+        return False
+    try:
+        head = path.read_text(encoding="utf-8", errors="replace")[:400]
+    except OSError:
+        return True
+    return not any(m in head for m in GENERATED_MARKERS)

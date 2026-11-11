@@ -589,6 +589,37 @@ def make_handler(state: EditorState):
                 state.open(target)
                 self._json({"ok": True})
                 return True
+            # ---- プロジェクト探し / フォルダブラウザ ----
+            if path == "/api/projects/scan" and m == "GET":
+                from . import browse
+                self._json({"roots": browse.scan_projects(),
+                            "custom_roots": browse.load_user_settings().get("project_roots", [])})
+                return True
+            if path == "/api/project_roots" and m in ("POST", "DELETE"):
+                from . import browse
+                d = self._jbody()
+                pth = str(Path(str(d.get("path", "")).strip().strip('"')).expanduser())
+                us = browse.load_user_settings()
+                roots_ = [r for r in us.get("project_roots", []) if r.lower() != pth.lower()]
+                if m == "POST":
+                    if not Path(pth).is_dir():
+                        raise ApiError(f"フォルダがありません: {pth}")
+                    roots_.insert(0, pth)
+                us["project_roots"] = roots_
+                browse.save_user_settings(us)
+                self._json({"ok": True, "project_roots": roots_})
+                return True
+            if path == "/api/fs/roots" and m == "GET":
+                from . import browse
+                self._json(browse.roots())
+                return True
+            if path == "/api/fs/list" and m == "GET":
+                from . import browse
+                try:
+                    self._json(browse.list_dir(q.get("path") or str(Path.home())))
+                except (FileNotFoundError, PermissionError) as e:
+                    raise ApiError(str(e))
+                return True
             if path == "/api/inspect" and m == "POST":
                 self._json(adopt.inspect(Path(str(self._jbody().get("path", "")).strip().strip('"')).expanduser()))
                 return True

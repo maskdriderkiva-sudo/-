@@ -66,6 +66,22 @@ def _prepare_toolchain(project, toolchain_name):
             print(f"エラー: {e}")
 
 
+def cmd_projects(a):
+    """PC 内の GBDK プロジェクトを名前ごとに一覧表示。"""
+    from . import browse
+    roots = [Path(a.root)] if a.root else None
+    found = browse.scan_projects(roots)
+    if not found:
+        print("GBDK のプロジェクトフォルダが見つかりませんでした (--root で場所を指定できます)")
+    for r in found:
+        print(f"[{r['root']}]")
+        for g in r["groups"]:
+            print(f"  {g['name']}  ({len(g['versions'])} 版)")
+            for v in g["versions"][-3:]:
+                print(f"     {v['folder']:40s} {'(中のフォルダ) ' if v['nested'] else ''}{v['path']}")
+    return 0
+
+
 def cmd_adopt(a):
     """既存の GBDK フォルダを GBForge プロジェクトとして使えるようにする (project.gbproj を追加するだけ)。"""
     from . import adopt
@@ -340,6 +356,10 @@ def main(argv=None):
     s.add_argument("file")
     s.add_argument("--banks", type=int, default=1)
     s.set_defaults(fn=cmd_sram)
+
+    s = sub.add_parser("projects", help="PC 内の GBDK プロジェクトを探して一覧表示")
+    s.add_argument("--root", help="探す場所 (例: C:\\gbdk-win64\\gbdk\\Project)")
+    s.set_defaults(fn=cmd_projects)
 
     s = sub.add_parser("adopt", help="既存の GBDK フォルダ (main.c / build.bat) を GBForge で開けるようにする")
     s.add_argument("path")
