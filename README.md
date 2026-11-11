@@ -15,6 +15,8 @@
 
 チェックサムは [SHA256SUMS.txt](download/SHA256SUMS.txt) にあります。
 
+今後の更新予定は [TODO.md](TODO.md) にまとめています。
+
 ## 今までのプロジェクトを開く
 
 1. GBForge を起動すると、`C:\gbdk-win64\gbdk\Project` などのプロジェクトが自動で見つかります。「あなたの GBDK プロジェクト」に、ゲームごとにまとめて表示されます
