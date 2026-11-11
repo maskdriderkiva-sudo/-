@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gbforge"
+version = "0.1.0"
+description = "ゲームボーイ用ゲームエンジン & エディタ (GBDK-2020 / 日本語フォント / CUBIC STYLE ロムライタ対応)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pillow>=9", "pyserial>=3.5"]
+
+[project.optional-dependencies]
+emulator = ["pyboy>=2"]
+test = ["pytest", "pyboy>=2"]
+
+[project.scripts]
+gbforge = "gbforge.cli:main"
+
+[tool.setuptools]
+packages = ["gbforge"]
+
+[tool.setuptools.package-data]
+gbforge = ["engine/*.c", "engine/*.h", "editor/*", "fonts/*", "gbjp/*"]

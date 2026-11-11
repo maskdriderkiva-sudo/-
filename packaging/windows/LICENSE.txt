@@ -1,0 +1,25 @@
+﻿GBForge — ゲームボーイ用ゲームエンジン & エディタ
+
+このソフトウェアには以下の第三者ソフトウェアが含まれています。
+それぞれのライセンスに従って再配布しています。
+
+■ GBDK-2020 4.3.0 (gbdk フォルダ)
+  GPLv2 + リンク例外 (GBDK ライブラリ), SDCC (GPL), 各ツールのライセンス
+  → gbdk\licenses フォルダを参照。GBDK で作ったゲームの配布に制限はありません。
+
+■ 美咲フォント (Num Kadoma)
+  商用・非商用を問わず、自由に利用・複製・改変・再配布できるフリーフォントです。
+  → licenses\MisakiFont-LICENSE.txt
+
+■ Python 3.12 (Python Software Foundation License)
+  → licenses\Python-LICENSE.txt
+
+■ PyBoy (LGPL v3), NumPy (BSD), Pillow (MIT-CMU), pySerial (BSD),
+  PySDL2 (Public Domain / zlib), SDL2 (zlib)
+  → python\Lib\site-packages\*.dist-info フォルダ内の各 LICENSE
+
+■ ロムライタ通信 (GB Cart Flasher / CUBIC STYLE)
+  ファームウェアの仕様に基づいて独自に実装したもので、ファームウェアのコードは含みません。
+
+本ソフトウェアは「現状のまま」提供され、いかなる保証もありません。
+カートリッジへの書き込みは自己責任で行ってください。

@@ -1,0 +1,72 @@
+# GBForge オールインワン版 (GBDK-2020 + ロムライタドライバ + エミュレータ同梱) を
+# Windows / macOS / Linux 向けにビルドする。タグ v* を push するとリリースに添付される。
+name: build-app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-13, macos-14, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]" pyinstaller
+      - name: Setup GBDK-2020
+        run: python -m gbforge setup
+      - name: Test (GBDK でビルドした ROM をエミュレータで検証)
+        run: python -m pytest -q
+      - name: Build app
+        run: python packaging/build_app.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GBForge-${{ matrix.os }}
+          path: dist/GBForge-*.zip
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/GBForge-*.zip
+
+  # Windows 版 (インストーラー + ポータブル zip) は Linux からクロスビルドする
+  windows:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nsis gcc-mingw-w64-x86-64
+          pip install -e .
+      - name: Build Windows installer
+        run: python packaging/windows/build_windows.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GBForge-windows
+          path: |
+            dist/GBForge-*-Setup.exe
+            dist/GBForge-*-windows-x64.zip
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/GBForge-*-Setup.exe
+            dist/GBForge-*-windows-x64.zip
