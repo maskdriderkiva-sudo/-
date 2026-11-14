@@ -1,0 +1,192 @@
+{
+ "format": "gbforge-media",
+ "version": 1,
+ "name": "サンプル",
+ "target": "cgb",
+ "cgb_fast": true,
+ "assets": [
+  {
+   "id": "a1",
+   "name": "宇宙飛行士",
+   "path": "astronaut.jpg",
+   "kind": "image",
+   "params": {
+    "preset": "standard",
+    "dither": "fs"
+   }
+  },
+  {
+   "id": "a2",
+   "name": "コーヒー",
+   "path": "coffee.jpg",
+   "kind": "image",
+   "params": {
+    "preset": "retro_film"
+   }
+  },
+  {
+   "id": "a3",
+   "name": "猫",
+   "path": "chelsea.jpg",
+   "kind": "image",
+   "params": {
+    "preset": "old_mono"
+   }
+  },
+  {
+   "id": "v1",
+   "name": "ズーム",
+   "path": "astronaut_zoom.mp4",
+   "kind": "video",
+   "params": {
+    "dither": "bayer4"
+   },
+   "video": {
+    "fps": 15,
+    "threshold": 8
+   }
+  }
+ ],
+ "scenes": [
+  {
+   "name": "opening",
+   "length": 370,
+   "loop": false,
+   "fade_obj": false,
+   "media": [
+    {
+     "id": "c1",
+     "asset": "a1",
+     "start": 60,
+     "duration": 299
+    }
+   ],
+   "fx": [
+    {
+     "id": "x1",
+     "type": "fade_in_black",
+     "start": 60,
+     "duration": 60
+    },
+    {
+     "id": "x2",
+     "type": "flash_white",
+     "start": 299,
+     "duration": 12
+    },
+    {
+     "id": "x3",
+     "type": "fade_out_black",
+     "start": 311,
+     "duration": 48
+    }
+   ],
+   "palette": [
+    {
+     "id": "k0",
+     "frame": 0,
+     "level": -31,
+     "interp": "step"
+    }
+   ]
+  },
+  {
+   "name": "slideshow",
+   "length": 358,
+   "loop": true,
+   "fade_obj": false,
+   "media": [
+    {
+     "id": "c2",
+     "asset": "a2",
+     "start": 30,
+     "duration": 149
+    },
+    {
+     "id": "c3",
+     "asset": "a3",
+     "start": 209,
+     "duration": 149
+    }
+   ],
+   "fx": [
+    {
+     "id": "y1",
+     "type": "fade_in_black",
+     "start": 30,
+     "duration": 30
+    },
+    {
+     "id": "y2",
+     "type": "fade_out_black",
+     "start": 149,
+     "duration": 30
+    },
+    {
+     "id": "y3",
+     "type": "fade_in_black",
+     "start": 209,
+     "duration": 30
+    },
+    {
+     "id": "y4",
+     "type": "fade_out_black",
+     "start": 329,
+     "duration": 30
+    }
+   ],
+   "palette": [
+    {
+     "id": "k1",
+     "frame": 0,
+     "level": -31,
+     "interp": "step"
+    }
+   ]
+  },
+  {
+   "name": "movie",
+   "length": 275,
+   "loop": false,
+   "fade_obj": false,
+   "media": [
+    {
+     "id": "c4",
+     "asset": "v1",
+     "start": 18,
+     "duration": 239
+    }
+   ],
+   "fx": [
+    {
+     "id": "z1",
+     "type": "fade_in_black",
+     "start": 18,
+     "duration": 30
+    },
+    {
+     "id": "z2",
+     "type": "fade_out_black",
+     "start": 233,
+     "duration": 24
+    }
+   ],
+   "palette": [
+    {
+     "id": "k2",
+     "frame": 0,
+     "level": -31,
+     "interp": "step"
+    }
+   ]
+  }
+ ],
+ "output": {
+  "dir": "gbmedia",
+  "bank_mode": "auto",
+  "first_bank": 2
+ },
+ "settings": {
+  "ffmpeg": ""
+ }
+}

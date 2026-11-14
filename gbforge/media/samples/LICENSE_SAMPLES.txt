@@ -1,0 +1,13 @@
+GB Media Studio サンプル素材について
+
+画像は scikit-image のサンプルデータから取り、縮小して JPEG にしたものです。
+いずれも著作権の制限がない素材です。
+
+  astronaut.jpg  宇宙飛行士 Eileen Collins (NASA Great Images)            パブリックドメイン
+  rocket.jpg     Falcon 9 による DSCOVR の打ち上げ (SpaceX)              パブリックドメイン
+  coffee.jpg     コーヒーカップ (撮影 Rachel Michetti / Pikolo Espresso Bar)  CC0
+  chelsea.jpg    猫の Chelsea (撮影 Stefan van der Walt)                   CC0
+
+動画は上の画像から ffmpeg で作ったものです (同じくパブリックドメイン / CC0 の素材の加工)。
+  astronaut_zoom.mp4  astronaut をゆっくりズーム (320x288, 30fps, 4 秒)
+  rocket_pan.mp4      rocket を横にパン (320x288, 30fps, 4 秒)
