@@ -25,7 +25,7 @@ VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v"}
 DECODE_W = 320          # 取り出すときの横幅 (この後 160x144 に変換する)
 
 
-class VideoError(Exception):
+class VideoError(ValueError):
     pass
 
 

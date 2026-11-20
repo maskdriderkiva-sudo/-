@@ -42,7 +42,7 @@
     "dither": "bayer4"
    },
    "video": {
-    "fps": 15,
+    "fps": 10,
     "threshold": 8
    }
   }

@@ -304,6 +304,10 @@ def encode_video(frames: list[Indexed], hold: int, cfg: EncodeConfig, loop: bool
         forbid0 = set(last_slots)
     if loop and (last_slots & first_slots):
         video.warnings.append("ループのつなぎ目で先頭フレームの読み込みが最後のフレームと重なり、1 フレーム乱れる可能性があります")
+    if loop and video.stats and video.stats[0].updates > video.holds[-1]:
+        n = video.stats[0].updates - video.holds[-1]
+        video.warnings.append(f"ループのつなぎ目: 先頭フレームの読み込みに {video.stats[0].updates} フレームかかるため、"
+                              f"最後のフレームが約 {n} フレーム ({n / 59.7275:.2f} 秒) 長く表示されます")
     return video
 
 
@@ -340,15 +344,17 @@ def _encode_pass(frames, hold, cfg, loop, forbid0):
                 continue
 
         thr = cfg.threshold
+        thr_cap = cfg.max_threshold * (2.0 if cfg.strict_fps else 1.0)
         while True:
             res = _plan_frame(k, t, vis, pal, cache, prev_slot, prev_attr, visible, buf_map, buf_attr,
                               thr, limit, cfg, forbid0 if k == 0 else set())
             need = upload_updates(res["tile_runs"], res["map_runs"], res["attr_runs"], bpu, cfg.run_cost)
-            if need <= hold or thr >= cfg.max_threshold * (2.0 if cfg.strict_fps else 1.0):
+            # 先頭フレームは再生前に読み込んでおく (タイムラインが読み込み時間の分だけ早く始める) ので画質を落とさない
+            if k == 0 or need <= hold or thr >= thr_cap:
                 break
-            thr = max(4.0, thr * 1.6 + 4)
-        over = need > hold
-        h = max(hold, need)
+            thr = min(thr_cap, max(4.0, thr * 1.6 + 4))
+        over = need > hold and k > 0
+        h = hold if k == 0 else max(hold, need)
         # 確定
         for s, key, v, p, variants in res["puts"]:
             cache.put(s, key, v, p, variants)

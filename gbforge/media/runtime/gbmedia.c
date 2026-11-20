@@ -389,7 +389,7 @@ static void up_begin(uint8_t chunk, uint16_t off, uint8_t buf, uint8_t is_image)
 
 /* VRAM へ budget バイトまで転送。全部終わったら 1 */
 static uint8_t up_step(uint16_t budget) {
-    uint8_t save = CURRENT_BANK, cnt;
+    uint8_t save = CURRENT_BANK, cnt, ly, top = 0;
     uint16_t n, pos;
     if (!up_active) return 1;
     SWITCH_ROM(gbm_chunk_bank(up_chunk));
@@ -437,8 +437,12 @@ static uint8_t up_step(uint16_t budget) {
         }
         if (!budget) break;
         /* 安全装置: 次の VBlank が近いのに転送が残っていたら、このフレームはここまで
-         * (はみ出すと vsync() が 1 フレーム丸ごと待つことになり、かえって遅くなる) */
-        if (LY_REG >= GBM_LY_STOP && LY_REG < 144u) { gbmedia_cut_updates++; break; }
+         * (はみ出すと vsync() が 1 フレーム丸ごと待つことになり、かえって遅くなる)。
+         * LY は 1 回だけ読み、画面の表示部分 (LY < GBM_LY_STOP) に入ってからだけ判定する
+         * (VBlank の終わり (153 行目) の LY の読み値に左右されないように) */
+        ly = LY_REG;
+        if (ly < GBM_LY_STOP) top = 1;
+        else if (top && ly < 144u) { gbmedia_cut_updates++; break; }
         n = up_rem < budget ? up_rem : budget;
         if (n > GBM_PIECE) n = GBM_PIECE;
         if (is_cgb) VBK_REG = up_vbk;

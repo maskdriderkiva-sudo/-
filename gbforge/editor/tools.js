@@ -51,7 +51,8 @@ EXT.tree = (t, isSel) => {
   const imgs = (p.images || []).map((f) => item('image', f, h('img', { class: 'thumb', src: '/file?path=' + encodeURIComponent(f) }), h('span', {}, f)));
   t.append(treeSection('🎨 アセット (画像)', imgs.length ? imgs : [h('div', { class: 'tree-item muted' }, '(PNG なし)')]));
   if (!EXT.arrays) { EXT.ensureArrays().then(() => renderTree()); }
-  const arrs = (EXT.arrays || []).filter((a) => a.kind !== 'data' || a.count >= 8);
+  // GB Media Studio が書き出したデータ (gbmedia*.c) は自動生成なのでここには出さない
+  const arrs = (EXT.arrays || []).filter((a) => (a.kind !== 'data' || a.count >= 8) && !/(^|\/)gbmedia[^/]*\.c$/.test(a.file));
   t.append(treeSection('🧩 C データ (配列)', arrs.length ? arrs.map((a) => item('carray', arrKey(a),
     `${KIND_ICON[a.kind] || '#'} ${a.name}`, h('span', { class: 'badge' }, `${a.file} · ${a.kind === 'tiles' ? a.count / 16 + '枚' : a.count}`)))
     : [h('div', { class: 'tree-item muted' }, EXT.arrays ? '(配列なし)' : '読み込み中…')]));

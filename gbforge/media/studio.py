@@ -31,10 +31,10 @@ from .encode import EncodeConfig, Still, Video, encode_still, encode_video
 from .sim import Player, SimImage, SimScene, SimVideo, pal5_to_words
 
 FORMAT = "gbforge-media"
-CACHE_VERSION = 5
+CACHE_VERSION = 6
 
 
-class MediaError(Exception):
+class MediaError(ValueError):
     pass
 
 
@@ -261,8 +261,12 @@ def make_report(proj, results, images, videos, scenes, diags) -> dict:
         per = [s.vram_bytes for s in vd.stats]
         over = sum(1 for s in vd.stats if s.over)
         max_need = max(s.updates for s in vd.stats) if vd.stats else 0
+        req_thr = float((r.asset.get("video") or {}).get("threshold", 8))
+        raised = sum(1 for s in vd.stats if not s.bgp_only and s.threshold > req_thr + 1e-6)
+        max_thr = max((s.threshold for s in vd.stats), default=req_thr)
         # 予算の何 % を使うか (計測値に対する CPU 時間の目安)
-        cpu = [min(999, int(100 * (s.cost or s.vram_bytes) / (measured * s.hold))) for s in vd.stats]
+        # 先頭フレームは再生前に読み込む (タイムラインが早めに始める) ので、表示時間との比較には入れない
+        cpu = [min(999, int(100 * (s.cost or s.vram_bytes) / (measured * s.hold))) for s in vd.stats[1:]] or [0]
         assets_rep.append({
             "id": aid, "kind": "video", "name": r.asset.get("name"), "frames": n, "target_fps": round(target_fps, 2),
             "achieved_fps": round(achieved, 2), "over_frames": over, "rom_bytes": rec_bytes,
@@ -271,7 +275,15 @@ def make_report(proj, results, images, videos, scenes, diags) -> dict:
             "max_cpu_percent": max(cpu) if cpu else 0, "avg_cpu_percent": int(np.mean(cpu)) if cpu else 0,
             "bgp_only_frames": sum(1 for s in vd.stats if s.bgp_only), "max_updates": max_need,
             "per_frame_bytes": per, "per_frame_hold": vd.holds, "per_frame_new_tiles": [s.new_tiles for s in vd.stats],
+            "threshold": req_thr, "raised_frames": raised, "max_used_threshold": round(max_thr, 1),
             "feasible": over == 0})
+        if raised:
+            diags.append({
+                "level": "info",
+                "text": f"「{r.asset.get('name')}」: {target_fps:.1f} FPS を保つため、{raised}/{n} 枚で差分しきい値を "
+                        f"{req_thr:g} → 最大 {max_thr:.0f} に上げました (細かな変化を省くので画質が下がります)",
+                "fix": "画質を優先するなら: 目標 FPS を下げる・ディザリングを弱める" +
+                       ("・カラーなら CPU 倍速モードを使う" if target == "cgb" and not proj.get("cgb_fast", True) else "")})
         if over:
             diags.append({
                 "level": "warn",

@@ -113,6 +113,7 @@ function renderTree() {
       h('div', { class: 'tree-item' + (isSel('file', f) ? ' sel' : ''), onclick: () => openTab('file', f), ondblclick: () => openInIde(f), title: 'ダブルクリックで IDE で開く' },
         f.startsWith('lib/') ? h('span', { class: 'muted' }, f) : f)), newSourceFile));
     if (window.EXT) EXT.tree(t, isSel);
+    if (window.MEDIA) MEDIA.tree(t, isSel);
     if (p.res.length || !p.adopted) t.append(treeSection('🖼 リソース (res)', p.res.map((f) =>
       h('div', { class: 'tree-item' + (isSel('res', f) ? ' sel' : ''), onclick: () => openTab('res', f) },
         h('img', { class: 'thumb', src: '/asset/' + f.replace(/^res\/([a-z]+)\//, 'res_$1/') }), f.replace(/^res\//, ''))),
@@ -134,6 +135,7 @@ function renderTree() {
     h('div', { class: 'tree-item' + (isSel('script', n) ? ' sel' : ''), onclick: () => openTab('script', n) }, n + '.c')), newScript));
   t.append(treeSection('💬 テキスト', [h('div', { class: 'tree-item' + (isSel('texts', 'texts') ? ' sel' : ''), onclick: () => openTab('texts', 'texts') },
     `テキスト一覧 (${p.texts.length})`)]));
+  if (window.MEDIA) MEDIA.tree(t, isSel);
   t.append(treeSection('⚙ 設定', [h('div', { class: 'tree-item' + (isSel('settings', 'settings') ? ' sel' : ''), onclick: () => openTab('settings', 'settings') }, 'プロジェクト設定')]));
 }
 
@@ -217,10 +219,10 @@ async function leaveCurrent(kind, name) {
 function renderTabs() {
   const el = $('#tabs');
   el.innerHTML = '';
-  const icon = { stage: '🗺', carray: '🧩', convert: '🧰', versions: '🕘', image: '🖼', file: '📄', res: '🖼', scene: '🎬', script: '📜', texts: '💬', sprite: '🧍', background: '🖼', settings: '⚙' };
+  const icon = { media: '🎞', stage: '🗺', carray: '🧩', convert: '🧰', versions: '🕘', image: '🖼', file: '📄', res: '🖼', scene: '🎬', script: '📜', texts: '💬', sprite: '🧍', background: '🖼', settings: '⚙' };
   for (const t of S.tabs) {
     el.append(h('div', { class: 'tab' + (t === S.active ? ' active' : ''), onclick: () => openTab(t.kind, t.name) },
-      `${icon[t.kind]} ${t.kind === 'convert' ? '変換ツール' : t.kind === 'versions' ? 'バージョン' : t.kind === 'carray' ? t.name.split('#').pop() : t.kind === 'file' || t.kind === 'res' || t.kind === 'image' ? t.name.split('/').pop() : t.kind === 'script' ? t.name + '.c' : t.kind === 'texts' ? 'テキスト' : t.kind === 'settings' ? '設定' : t.name}`,
+      `${icon[t.kind]} ${t.kind === 'media' ? t.name.split('/').pop().replace(/\.gbmedia$/, '') : t.kind === 'convert' ? '変換ツール' : t.kind === 'versions' ? 'バージョン' : t.kind === 'carray' ? t.name.split('#').pop() : t.kind === 'file' || t.kind === 'res' || t.kind === 'image' ? t.name.split('/').pop() : t.kind === 'script' ? t.name + '.c' : t.kind === 'texts' ? 'テキスト' : t.kind === 'settings' ? '設定' : t.name}`,
       h('span', { class: 'x', onclick: (e) => { e.stopPropagation(); closeTab(t); } }, '×')));
   }
 }

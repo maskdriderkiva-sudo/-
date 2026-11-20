@@ -18,3 +18,11 @@
 
 - `packaging/windows/installer.nsi`
 - `packaging/windows/build_windows.py`
+
+## GB Media Studio の続き
+
+- [ ] 実機 (ゲームボーイ / ゲームボーイカラー) での確認。今はエミュレーター (PyBoy) での計測だけなので、転送量には余裕を持たせている
+- [ ] KIVA GB STUDIO の `.kgbproj` / KIVA GB IMAGE CONVERTER との連携 (ファイル形式が分かったら、変換設定の取り込みなど)
+- [ ] カラー: 画像の切り替えで VRAM バンク 0 / 1 を交互に使い、暗転しなくてもタイルが乱れないようにする
+- [ ] 「エンジン」型プロジェクトのシーンから GB Media Studio のシーンを呼び出す
+- [ ] Windows 版をインストールした PC での動作確認 (ビルド環境では wine が動かず、中身の確認だけ行った)

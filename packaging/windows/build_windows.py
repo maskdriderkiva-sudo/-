@@ -31,7 +31,7 @@ from gbforge import __version__, toolchain  # noqa: E402
 
 PY_VERSION = "3.12.10"
 PY_NUGET = f"https://api.nuget.org/v3-flatcontainer/python/{PY_VERSION}/python.{PY_VERSION}.nupkg"
-WHEELS = ["pillow", "pyserial", "pyboy"]
+WHEELS = ["pillow", "pyserial", "numpy", "pyboy"]
 # 配布に不要な標準ライブラリ (サイズ削減)
 STDLIB_DROP = ["test", "idlelib", "tkinter", "turtledemo", "ensurepip", "lib2to3", "pydoc_data", "unittest/test",
                "venv", "sqlite3", "site-packages/pip"]
@@ -110,7 +110,8 @@ def main():
         run([sys.executable, "-m", "pip", "download", "--only-binary=:all:", "--platform", "win_amd64",
              "--python-version", PY_VERSION.rsplit(".", 1)[0], "--implementation", "cp", "-d", wheels, *WHEELS])
     for whl in sorted(wheels.glob("*.whl")):
-        if a.no_emulator and re.match(r"(pyboy|numpy|pysdl2|PySDL2)", whl.name, re.I):
+        # 軽量版はエミュレーター (PyBoy) を入れない。numpy は GB Media Studio が使うので常に入れる
+        if a.no_emulator and re.match(r"(pyboy|pysdl2|PySDL2)", whl.name, re.I):
             continue
         with zipfile.ZipFile(whl) as z:
             z.extractall(site)

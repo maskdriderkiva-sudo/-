@@ -168,6 +168,70 @@
         </div>
       </div>
 
+      <div id="mediaView" class="view">
+        <div class="view-toolbar">
+          <strong id="mdName"></strong>
+          <label title="出力するハード。初代は 4 階調 (BGP)、カラーは BG パレット 8 本 x 4 色 (RGB555)">対象 <select id="mdTarget"><option value="dmg">初代 (4 階調)</option><option value="cgb">カラー</option></select></label>
+          <label class="md-cgb" title="カラーの CPU 倍速モード (cpu_fast)。VRAM に送れる量が増え、動画の FPS や画質を上げられます。ゲーム側も倍速で動くことに注意"><input type="checkbox" id="mdFast"> 倍速</label>
+          <span class="sep"></span>
+          <label title="編集するシーン (書き出すと GBM_SCENE_名前 で呼び出せます)">シーン <select id="mdScene"></select></label>
+          <button id="mdSceneAdd" class="tiny" title="シーンを追加">＋</button>
+          <button id="mdSceneRen" class="tiny" title="シーンの名前を変える">名前</button>
+          <button id="mdSceneDel" class="tiny danger" title="シーンを削除">削除</button>
+          <label title="シーンの長さ (秒)。ゲームボーイの 1 秒 = 約 59.73 フレーム">長さ <input id="mdLen" type="number" min="0.1" step="0.1" style="width:64px"> 秒</label>
+          <label title="最後まで行ったら最初から繰り返す"><input type="checkbox" id="mdLoop"> ループ</label>
+          <label title="スプライト (OBJ) のパレットも一緒にフェードさせる。ゲームが gbmedia_set_obj_palettes() で渡したパレットに効きます"><input type="checkbox" id="mdFadeObj"> スプライトもフェード</label>
+          <span class="sep"></span>
+          <button id="mdUndo" title="元に戻す (Ctrl+Z)">↶</button>
+          <button id="mdRedo" title="やり直す (Ctrl+Y)">↷</button>
+          <button id="mdSave" title="保存 (Ctrl+S)。保存のたびに 1 つ前の内容を .gbmedia.bak に残します">保存</button>
+          <button id="mdBuild" title="変換・エンコードして、書き出すデータからプレビューを作り直す (ハードの制約の診断も更新)">⟳ 変換</button>
+          <button id="mdDemo" class="play" title="このシーンだけを再生するデモ ROM を GBDK でコンパイルし、エミュレーターで起動">▶ ROM プレビュー</button>
+          <button id="mdVerify" title="デモ ROM を PyBoy で動かし、プレビューと 1 フレームずつ比べる (実際の FPS・フレーム落ちを測る)">✔ ROM 検証</button>
+          <button id="mdExport" title="GBDK 用の C ソース (gbmedia/) をプロジェクトに書き出す">⤓ 書き出し</button>
+        </div>
+        <div class="md-layout">
+          <div class="md-assets">
+            <div class="row space"><span class="muted small">素材 (ドラッグでタイムラインへ)</span>
+              <button id="mdImport" class="tiny" title="写真・画像 (PNG/JPEG/BMP/WebP/GIF) や動画 (MP4/WebM/MOV) を取り込む。元のファイルはコピーして使い、書き換えません">＋ 取り込み</button></div>
+            <ul id="mdAssetList" class="list md-asset-list"></ul>
+            <div class="hint small">ここにファイルをドロップしても取り込めます</div>
+          </div>
+          <div class="md-preview">
+            <div class="md-screens">
+              <div class="md-screen"><div class="muted small" id="mdOrigLabel">元の素材</div><canvas id="mdOrig" width="160" height="144"></canvas></div>
+              <div class="md-screen"><div class="muted small" id="mdConvLabel">ゲームボーイの画面 (書き出すデータから再現)</div><canvas id="mdCanvas" width="160" height="144"></canvas></div>
+            </div>
+            <div class="md-controls">
+              <button id="mdFirst" class="tiny" title="先頭へ (Home)">⏮</button>
+              <button id="mdPrev" class="tiny" title="1 フレーム戻る (←)">◀|</button>
+              <button id="mdPlay" title="再生 / 停止 (Space)">▶</button>
+              <button id="mdNext" class="tiny" title="1 フレーム進む (→)">|▶</button>
+              <button id="mdLast" class="tiny" title="最後へ (End)">⏭</button>
+              <label title="最後まで行ったら最初から再生"><input type="checkbox" id="mdLoopPlay" checked> ループ再生</label>
+              <span id="mdTime" class="mono"></span>
+              <label title="表示倍率">倍率 <select id="mdScale"><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option><option value="8">8x</option><option value="fit" selected>合わせる</option></select></label>
+              <label title="表示の色。初代は DMG の緑かグレー、カラーは実際の色">表示 <select id="mdMode"><option value="auto">実際の色</option><option value="dmg_green">DMG 緑</option><option value="dmg_gray">DMG グレー</option></select></label>
+              <label title="元の素材を並べて表示して比べる"><input type="checkbox" id="mdCompare" checked> 元と比較</label>
+              <span id="mdStale" class="warn small hidden">変更あり — 変換中…</span>
+            </div>
+            <div id="mdReport" class="md-report"></div>
+          </div>
+        </div>
+        <div class="md-timeline">
+          <div class="md-tl-toolbar">
+            <label title="演出を再生位置に追加">演出 <select id="mdFxType"></select></label>
+            <button id="mdFxAdd" class="tiny">＋ 追加</button>
+            <button id="mdKeyAdd" class="tiny" title="パレット (明るさ) のキーフレームを再生位置に追加">◆ キーフレーム</button>
+            <button id="mdDelSel" class="tiny danger" title="選んでいる物を削除 (Delete)">削除</button>
+            <label title="タイムラインの拡大">ズーム <input id="mdZoom" type="range" min="0.5" max="12" step="0.5" value="3"></label>
+            <span class="muted small">ドラッグで移動・右端で長さ・Shift で吸着なし・ダブルクリックでキーフレーム</span>
+          </div>
+          <div id="mdTracks" class="md-tracks"></div>
+        </div>
+        <div id="mdEmpty" class="empty">左の「メディア」からメディアプロジェクトを開くか作ってください</div>
+      </div>
+
       <div id="settingsView" class="view">
         <div class="view-toolbar"><strong>プロジェクト設定</strong> <button id="btnSettingsSave">保存</button></div>
         <form id="settingsForm" class="form" onsubmit="return false">
@@ -283,7 +347,9 @@
   </div>
 </div>
 <input type="file" id="fileInput" accept="image/png" class="hidden">
+<input type="file" id="mdFile" accept="image/*,video/*,.gif,.webp,.bmp,.mp4,.webm,.mov,.mkv,.avi" multiple class="hidden">
 <script src="/editor/tools.js"></script>
+<script src="/editor/media.js"></script>
 <script src="/editor/app.js"></script>
 </body>
 </html>

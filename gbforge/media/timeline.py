@@ -202,7 +202,7 @@ def compile_scene(scene: dict, target: str, assets_info: dict, bytes_per_update:
         events.append((ev, op, int(info["index"])))
         # 切り替え中 (読み込み〜表示) に前の絵が見えていると、タイルが重なって乱れることがある
         if i > 0:
-            window = levels[ev:start + 2]
+            window = levels[ev:max(ev + 1, start)]     # 読み込み中 (切り替えの前まで) だけが問題
             dark = all((dmg_step(v) in (-3, 3)) if target == "dmg" else abs(v) >= 31 for v in window)
             if not dark:
                 warnings.append(

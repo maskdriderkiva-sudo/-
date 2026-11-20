@@ -4,8 +4,11 @@
 
 | ファイル | 内容 |
 |---|---|
-| [**GBForge-0.1.0-Setup.exe**](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.1.0-Setup.exe) (25 MB) | 完全版インストーラー (おすすめ)。エミュレータ入り |
-| [GBForge-0.1.0-lite-Setup.exe](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.1.0-lite-Setup.exe) (13 MB) | 軽量版インストーラー。エミュレータなし |
+| [**GBForge-0.2.0-Setup.exe**](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.2.0-Setup.exe) (25 MB) | 完全版インストーラー (おすすめ)。エミュレータ入り。GB Media Studio の「ROM 検証」も使えます |
+| [GBForge-0.2.0-lite-Setup.exe](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.2.0-lite-Setup.exe) (20 MB) | 軽量版インストーラー。エミュレータなし |
+
+0.2.0 の新機能: **GB Media Studio** (写真・動画の変換とタイムライン演出 → [説明](docs/media_studio.md))。
+動画を読み込むには別に ffmpeg が必要です (`winget install Gyan.FFmpeg`)。
 
 使い方:
 
@@ -259,6 +262,31 @@ void main(void) {
   gbforge jpfont --out lib/gbjp --scan src
   ```
 
+## GB Media Studio (写真・動画)
+
+![GB Media Studio](docs/media_studio.png)
+
+写真や動画を取り込み、初代 (4 階調) / カラー (8 パレット) 用に変換して、タイムラインでフェードなどの演出を付け、
+GBDK 用の C ソースとして書き出します。左の一覧の「🎬 メディア (写真・動画)」の **＋** から始めます。
+
+- 160×144 への切り抜き、明るさ・コントラスト・ガンマなどの調整、ディザリング (Floyd–Steinberg / Atkinson / Bayer)、写真向けのプリセット
+- 動画は差分 (変わったタイルだけ) で再生。目標 FPS に対して **実際に出る FPS と、そのために下げた画質を数字で表示** します
+- 黒/白のフェード、フラッシュ、点滅、フィルムの明滅、ホラーなどの演出は **パレットだけ** で行い、LCD は止めません
+- プレビューは書き出すデータを再生ライブラリと同じ規則で再生したもので、ROM プレビュー (GBDK + エミュレーター) と、
+  PyBoy でプレビューと 1 フレームずつ比べる「ROM 検証」もできます
+
+```c
+#include "gbmedia/gbmedia.h"
+#include "gbmedia/gbmedia_data.h"
+
+gbmedia_init();
+gbmedia_load_scene(GBM_SCENE_OPENING);
+gbmedia_play();
+```
+
+詳しくは [docs/media_studio.md](docs/media_studio.md) (計測した転送量・トレードオフ・まだできないこと) を見てください。
+動画の読み込みには ffmpeg が必要です (Windows: `winget install Gyan.FFmpeg`)。
+
 ## Visual Studio / VS Code で書く (Unity 風)
 
 開き方は次のどれでもかまいません。
@@ -452,9 +480,12 @@ pytest
 - `tests/test_serial_pty.py` は pty を使って、実際の pyserial 経由で同じ通信をテストします
 - `tests/test_rom_pyboy.py` はサンプルを実際に ROM 化し、PyBoy でプレイします。日本語表示、ワープ、2 択、変数のセーブまで自動で確認します。ビルドには **GBDK-2020** を使い、SDCC (sm83) があればテスト用シム (`tests/shim`) 版も合わせて検証します
 - `tests/test_toolchain.py` は GBDK インストーラーをテストします。チェックサム検証、パス・トラバーサルの防止、プラットフォームごとのファイル選択を確認します
+- `tests/test_media.py` は GB Media Studio をテストします。プレビューと再生ライブラリ (C) の表・規則が一致すること、サンプルのデモ ROM を初代・カラー (等速/倍速) で PyBoy 再生し、全フレームがプレビューと一致し、遅れ・打ち切り・フレーム落ちが 0 であることを確認します
+- `tests/test_media_api.py` はエディタが使う API (取り込み → 変換 → プレビュー → 書き出し → プロジェクトのビルド) をテストします
 
 ## ライセンス・クレジット
 
 - **美咲フォント** © Num Kadoma: 商用・非商用を問わず自由に利用・改変・再配布できるフリーフォントです ([gbforge/fonts/MISAKI_LICENSE.txt](gbforge/fonts/MISAKI_LICENSE.txt))
 - **ロムライタの通信プロトコル**は、GB Cart Flasher (Kraku & Chroost, Tauwasser 再実装, CUBIC STYLE 拡張) のファームウェアの仕様に基づいて GBForge 側で独自に実装したものです。ファームウェア自体のコードは含んでいません
+- **GB Media Studio のサンプル素材** はパブリックドメイン (NASA, SpaceX) と CC0 の写真です ([gbforge/media/samples/LICENSE_SAMPLES.txt](gbforge/media/samples/LICENSE_SAMPLES.txt))
 - **GBDK-2020** は各ツールのライセンス (GPLv2 + リンク例外、SDCC ほか) に従って再配布しています。ライセンス文は同梱の `gbdk/licenses/` にあります

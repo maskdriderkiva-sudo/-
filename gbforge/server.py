@@ -139,6 +139,10 @@ def make_handler(state: EditorState):
                 self._json({"error": str(e)}, e.status)
             except (ProjectError, assets.AssetError, FlasherError, ValueError) as e:
                 self._json({"error": str(e)}, 400)
+            except ImportError as e:
+                self._json({"error": f"GB Media Studio に必要なライブラリがありません: {e} (pip install numpy pillow)"}, 500)
+            except OSError as e:
+                self._json({"error": f"ファイルを扱えません: {e}"}, 400)
             except Exception as e:  # noqa: BLE001
                 self._json({"error": f"内部エラー: {e}"}, 500)
 
@@ -151,6 +155,10 @@ def make_handler(state: EditorState):
         def route(self, m: str, path: str, q: dict):
             if self.route_global(m, path, q):
                 return
+            if path.startswith("/api/media/"):
+                from .media import api as media_api   # numpy が必要なので使う時に読み込む
+                if media_api.handle(self, state, m, path, q):
+                    return
             p = state.project
             if m == "GET" and path == "/file":
                 f = p.resolve(q.get("path", ""))
