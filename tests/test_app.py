@@ -162,3 +162,66 @@ def test_build_from_app(app, tmp_path):
     assert "成功" in console(win), console(win)[-2000:]
     assert any(root.joinpath("build").glob("*.gb*"))
     win.close()
+
+
+def test_scene_editor_mouse(app, tmp_path):
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+    root = tmp_path / "eng2"
+    create_project(root, "Sample Game")
+    win = window(app, root)
+    v = win.open_tab("scene", "town")
+    n = len(v.scene["actors"])
+    z = v.zoom
+    # アクターを追加 (A ツールでクリック)
+    v.set_tool("actor")
+    QTest.mouseClick(v.canvas, Qt.LeftButton, Qt.NoModifier, QPoint(100 * z, 120 * z))
+    pump(app)
+    assert len(v.scene["actors"]) == n + 1 and v.sel == n and v.tool == "select"
+    a = v.scene["actors"][n]
+    assert (a["x"], a["y"]) == (88, 112)                      # 8px スナップ (ブラウザ版と同じ式)
+    # ドラッグで移動
+    QTest.mousePress(v.canvas, Qt.LeftButton, Qt.NoModifier, QPoint((a["x"] + 4) * z, (a["y"] + 4) * z))
+    QTest.mouseMove(v.canvas, QPoint((a["x"] + 4 + 16) * z, (a["y"] + 4) * z))
+    QTest.mouseRelease(v.canvas, Qt.LeftButton, Qt.NoModifier, QPoint((a["x"] + 4 + 16) * z, (a["y"] + 4) * z))
+    assert a["x"] == 104
+    # 当たり判定を塗る
+    v.set_tool("collision")
+    QTest.mouseClick(v.canvas, Qt.LeftButton, Qt.NoModifier, QPoint(12 * 8 * z + 2, 9 * 8 * z + 2))
+    assert v.scene["collision"][9][12] == "1"
+    # インスペクター・ヒエラルキー
+    assert win.hier.topLevelItemCount() == n + 2
+    win.save_all(False)
+    sc = json.loads((root / "scenes" / "town.json").read_text(encoding="utf-8"))
+    assert len(sc["actors"]) == n + 1 and sc["collision"][9][12] == "1" and "_bg_size" not in sc
+    win.close()
+
+
+def test_stage_editor_mouse(app, tmp_path):
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+    root = tmp_path / "cst"
+    create_c_project(root, "Stage Test", target="cgb")
+    png = next(root.rglob("*.png")).relative_to(root).as_posix()
+    win = window(app, root)
+    win.api.post("/api/stage/lv", {"from": "new", "width": 20, "height": 18, "tileset": {"kind": "png", "path": png}})
+    win.load_project()
+    v = win.open_tab("stage", "lv")
+    assert v.tile_count > 1
+    z = v.zoom
+    v.sel = 3
+    QTest.mouseClick(v.canvas, Qt.LeftButton, Qt.NoModifier, QPoint(2 * 8 * z + 1, 1 * 8 * z + 1))
+    assert v.data["tiles"][1 * 20 + 2] == 3
+    # 矩形
+    v.set_tool("rect")
+    v.sel = 5
+    QTest.mousePress(v.canvas, Qt.LeftButton, Qt.NoModifier, QPoint(4 * 8 * z + 1, 4 * 8 * z + 1))
+    QTest.mouseMove(v.canvas, QPoint(6 * 8 * z + 1, 5 * 8 * z + 1))
+    QTest.mouseRelease(v.canvas, Qt.LeftButton, Qt.NoModifier, QPoint(6 * 8 * z + 1, 5 * 8 * z + 1))
+    assert all(v.data["tiles"][y * 20 + x] == 5 for y in (4, 5) for x in (4, 5, 6))
+    v.do_undo()
+    assert v.data["tiles"][4 * 20 + 4] != 5
+    win.save_all(False)
+    out = (root / "src" / "stage_data.c").read_text(encoding="utf-8")
+    assert "stage_lv" in out
+    win.close()

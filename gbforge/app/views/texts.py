@@ -249,6 +249,7 @@ class TextsView(View):
 
     def save(self, quiet=True):
         self.api.put("/api/texts", self.texts)
+        self.win.extra.pop("texts_cache", None)    # アクターのテキストのプレビュー用
         self.dirty = False
         if not quiet:
             self.log("テキストを保存しました", "o")
