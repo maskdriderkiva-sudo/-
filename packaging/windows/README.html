@@ -6,7 +6,7 @@ table{border-collapse:collapse}td,th{border:1px solid #ccd;padding:4px 10px;text
 <p>GBDK-2020・日本語フォント・ロムライタ・エミュレータがすべて入っています。追加のインストールは不要です。</p>
 <h2>はじめかた</h2>
 <ol>
-<li>スタートメニューかデスクトップの <b>GBForge</b> を起動 → ブラウザでエディタが開きます (黒い窓はログです。閉じると終了します)。</li>
+<li>スタートメニューかデスクトップの <b>GBForge</b> を起動 → エディタのウィンドウが開きます。パネル (プロジェクト・インスペクター・コンソールなど) はドラッグで並べ替えられます。</li>
 <li>「新しいプロジェクト」で種類を選んで作成。
 <ul><li><b>ゲームエンジン</b>: シーン・アクター・会話をエディタで作る (Unity 風)</li>
 <li><b>C プログラム</b>: GBDK で自由に書く。初代 / カラー対応 / カラー専用を選べます</li></ul></li>
@@ -20,13 +20,13 @@ jp_init(128, 128);
 jp_print(1, 1, "ゲームボーイで日本語！");
 jp_print_box(1, 3, 18, 6, "長い文章は自動で折り返します。");</pre>
 <h2>コマンドライン</h2>
-<p>スタートメニューの「GBForge コマンドプロンプト」から:</p>
-<table><tr><td><code>GBForge doctor</code></td><td>GBDK / ロムライタ / エミュレータの状態</td></tr>
-<tr><td><code>GBForge new MyGame</code></td><td>プロジェクト作成 (<code>--type c --target both</code> で C プログラム)</td></tr>
-<tr><td><code>GBForge build MyGame</code></td><td>ROM をビルド</td></tr>
-<tr><td><code>GBForge flash MyGame --port COM3</code></td><td>カートリッジに書き込み</td></tr>
-<tr><td><code>GBForge ide MyGame</code></td><td>Visual Studio / VS Code で開く</td></tr>
-<tr><td><code>GBForge jpfont --out lib/gbjp --scan src</code></td><td>他の GBDK プロジェクト用に日本語フォントを生成</td></tr></table>
+<p>スタートメニューの「GBForge コマンドプロンプト」から (<code>gbforge</code> と打つと <code>GBForgeCLI.exe</code> が動きます):</p>
+<table><tr><td><code>gbforge doctor</code></td><td>GBDK / ロムライタ / エミュレータの状態</td></tr>
+<tr><td><code>gbforge new MyGame</code></td><td>プロジェクト作成 (<code>--type c --target both</code> で C プログラム)</td></tr>
+<tr><td><code>gbforge build MyGame</code></td><td>ROM をビルド</td></tr>
+<tr><td><code>gbforge flash MyGame --port COM3</code></td><td>カートリッジに書き込み</td></tr>
+<tr><td><code>gbforge ide MyGame</code></td><td>Visual Studio / VS Code で開く</td></tr>
+<tr><td><code>gbforge jpfont --out lib/gbjp --scan src</code></td><td>他の GBDK プロジェクト用に日本語フォントを生成</td></tr></table>
 <h2>ロムライタ</h2>
 <p>CUBIC STYLE / GB Cart Flasher (FTDI) に対応。初めて接続するときに FTDI の VCP ドライバが必要な場合があります (Windows Update で自動的に入ることが多いです)。
 ボーレートは基板のジャンパに合わせて設定で選びます (既定 187500)。</p>

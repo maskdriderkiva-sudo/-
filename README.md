@@ -4,9 +4,10 @@
 
 | ファイル | 内容 |
 |---|---|
-| [**GBForge-0.2.0-Setup.exe**](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.2.0-Setup.exe) (25 MB) | 完全版インストーラー (おすすめ)。エミュレータ入り。GB Media Studio の「ROM 検証」も使えます |
-| [GBForge-0.2.0-lite-Setup.exe](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.2.0-lite-Setup.exe) (20 MB) | 軽量版インストーラー。エミュレータなし |
+| [**GBForge-0.3.0-Setup.exe**](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.3.0-Setup.exe) (38 MB) | 完全版インストーラー (おすすめ)。エミュレータ入り。GB Media Studio の「ROM 検証」も使えます |
+| [GBForge-0.3.0-lite-Setup.exe](https://github.com/maskdriderkiva-sudo/-/raw/main/download/GBForge-0.3.0-lite-Setup.exe) (33 MB) | 軽量版インストーラー。エミュレータなし |
 
+0.3.0 の新機能: エディタが**ネイティブアプリ**になりました (ブラウザを使わず、専用のウィンドウで動きます)。
 0.2.0 の新機能: **GB Media Studio** (写真・動画の変換とタイムライン演出 → [説明](docs/media_studio.md))。
 動画を読み込むには別に ffmpeg が必要です (`winget install Gyan.FFmpeg`)。
 
@@ -34,7 +35,7 @@ GBForge はゲームボーイ (DMG) 用のゲームエンジンとエディタ�
 
 - **コンパイラは GBDK-2020** を使います。エンジンは C で書かれていて、ユーザーのスクリプトも C で書きます
 - **プロジェクト形式**でゲームを管理します。シーン、スプライト、背景、スクリプト、テキストはそれぞれファイルとして保存されます
-- **Unity 風のエディタ**があります。シーンビュー、ヒエラルキー、インスペクター、コンソールを備え、ブラウザで動きます
+- **Unity 風のエディタ**があります。シーンビュー、ヒエラルキー、インスペクター、コンソールを備えた**ネイティブアプリ (Qt)** です。パネルはドラッグで並べ替え・切り離しできます (ブラウザ版も `gbforge editor` で使えます)
 - **日本語フォント**として美咲フォント (8×8) を内蔵しています。かな・カナ・漢字 約 7000 字をゲームボーイ上で表示できます
 - **CUBIC STYLE のロムライタ** (GB Cart Flasher 互換) と連動します。ボタン一つでビルドからカートリッジへの書き込み・ベリファイまで行います
 
@@ -73,7 +74,7 @@ GBDK-2020、ロムライタドライバ、エミュレータ、Python をすべ�
 
 1. `GBForge-<版>-<OS>.zip` を展開します
 2. `GBForge` (Windows では `GBForge.exe`) をダブルクリックします
-3. ブラウザでスタート画面が開くので、「新しいプロジェクト」を作ります
+3. エディタのウィンドウ (スタート画面) が開くので、「新しいプロジェクト」を作ります
 
 配布 zip の作り方は 2 通りあります。
 
@@ -136,12 +137,12 @@ gbforge new MyGame --name "My Game"
 ```
 
 ```bash
-gbforge editor MyGame
+gbforge app MyGame
 ```
 
-引数なしで `gbforge` (または `gbforge editor`) を実行すると、スタート画面が開きます。スタート画面では、最近のプロジェクトを開く、新規作成する、といった操作ができます。
+引数なしで `gbforge` (または `gbforge app`) を実行すると、エディタ (ネイティブアプリ) のスタート画面が開きます。スタート画面では、最近のプロジェクトを開く、新規作成する、といった操作ができます。
 
-`gbforge new` はサンプル付きのプロジェクトを作ります (町 → 家に入る → 長老と会話・2 択・セーブ)。`gbforge editor` はブラウザでエディタを開きます。
+`gbforge new` はサンプル付きのプロジェクトを作ります (町 → 家に入る → 長老と会話・2 択・セーブ)。ブラウザ版のエディタを使いたい場合は `gbforge editor` (または `gbforge app --web`) です。ネイティブアプリには PySide6 (`pip install PySide6-Essentials`) が必要で、無い場合は自動でブラウザ版が開きます。
 
 エディタの操作:
 
@@ -449,7 +450,8 @@ gbforge sram read --port COM3 save.sav
 ## CLI 一覧
 
 ```text
-gbforge                         (引数なし) エディタのスタート画面
+gbforge                         (引数なし) エディタ (ネイティブアプリ) のスタート画面
+gbforge app [dir] [--web]        エディタ (ネイティブアプリ)。--web でブラウザ版
 gbforge setup [--archive F]      GBDK-2020 を自動セットアップ
 gbforge doctor                   GBDK / ロムライタ / エミュレータの状態
 gbforge play rom.gb              内蔵エミュレータで遊ぶ
@@ -458,7 +460,7 @@ gbforge ide [dir] [--editor visualstudio|vscode] [--file src/main.c] [--no-open]
 gbforge jpfont [--out lib/gbjp] [--scan src ...] [--full] [--chars "追加文字"]
 gbforge clean [dir]
 gbforge adopt <既存の GBDK フォルダ>
-gbforge editor [dir] [--port 8765] [--no-browser]
+gbforge editor [dir] [--port 8765] [--no-browser]   ブラウザ版のエディタ
 gbforge build [dir]
 gbforge run [dir]
 gbforge flash [dir|rom.gb] [--port P] [--baud B] [--algorithm A] [--wait-mode W] [--no-erase] [--no-verify]

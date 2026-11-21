@@ -4,23 +4,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gbforge"
-version = "0.2.0"
+version = "0.3.0"
 description = "ゲームボーイ用ゲームエンジン & エディタ (GBDK-2020 / 日本語フォント / CUBIC STYLE ロムライタ対応)"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["pillow>=9", "pyserial>=3.5", "numpy>=1.22"]
+dependencies = ["pillow>=9", "pyserial>=3.5", "numpy>=1.22", "PySide6-Essentials>=6.6"]
 
 [project.optional-dependencies]
 emulator = ["pyboy>=2"]
 # 動画の読み込みは ffmpeg (別途インストール) を使う。ffmpeg が無い環境の代わりに PyAV も使える
 video = ["av>=11"]
-test = ["pytest", "pyboy>=2"]
+test = ["pytest", "pyboy>=2", "PySide6-Essentials>=6.6"]
 
 [project.scripts]
 gbforge = "gbforge.cli:main"
 
 [tool.setuptools]
-packages = ["gbforge", "gbforge.media"]
+packages = ["gbforge", "gbforge.media", "gbforge.app", "gbforge.app.views"]
 
 [tool.setuptools.package-data]
 gbforge = ["engine/*.c", "engine/*.h", "editor/*", "fonts/*", "gbjp/*"]

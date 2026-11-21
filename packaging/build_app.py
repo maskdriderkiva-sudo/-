@@ -58,6 +58,11 @@ def main():
         "--exclude-module", "cryptography", "--exclude-module", "yaml", "--exclude-module", "tkinter",
         "--exclude-module", "pytest", "--exclude-module", "PyInstaller",
     ]
+    if importlib.util.find_spec("PySide6"):    # ネイティブアプリ (Qt)。使うのは QtCore / QtGui / QtWidgets だけ
+        args += ["--hidden-import", "PySide6.QtWidgets"]
+        for m in ("QtQml", "QtQuick", "QtQuickWidgets", "QtNetwork", "QtOpenGL", "QtOpenGLWidgets", "QtSql", "QtTest",
+                  "QtDesigner", "QtUiTools", "QtXml", "QtConcurrent", "QtPrintSupport", "QtDBus", "QtSvgWidgets"):
+            args += ["--exclude-module", f"PySide6.{m}"]
     if not a.no_emulator and importlib.util.find_spec("pyboy"):
         args += ["--collect-all", "pyboy", "--collect-all", "sdl2", "--collect-all", "sdl2dll"]
     print("== PyInstaller ==")

@@ -7,6 +7,7 @@ Linux / macOS / Windows のどこからでもクロスビルドできる:
     - x86_64-w64-mingw32-gcc / windres (ランチャー GBForge.exe のビルド。Windows なら gcc でも可)
     - makensis (NSIS, インストーラーの作成)
     - インターネット (NuGet の公式 Windows 版 Python, PyPI の Windows 用 wheel, GBDK-2020 の公式リリース)
+    - pefile (pip install pefile。Qt の DLL の依存関係を調べて、使わない部分を除くため)
 
 出力:
     dist/GBForge-<版>-Setup.exe            インストーラー (管理者権限不要)
@@ -31,7 +32,7 @@ from gbforge import __version__, toolchain  # noqa: E402
 
 PY_VERSION = "3.12.10"
 PY_NUGET = f"https://api.nuget.org/v3-flatcontainer/python/{PY_VERSION}/python.{PY_VERSION}.nupkg"
-WHEELS = ["pillow", "pyserial", "numpy", "pyboy"]
+WHEELS = ["pillow", "pyserial", "numpy", "PySide6-Essentials", "pyboy"]
 # 配布に不要な標準ライブラリ (サイズ削減)
 STDLIB_DROP = ["test", "idlelib", "tkinter", "turtledemo", "ensurepip", "lib2to3", "pydoc_data", "unittest/test",
                "venv", "sqlite3", "site-packages/pip"]
@@ -53,14 +54,15 @@ def fetch(url: str, dest: Path):
     return dest
 
 
-def build_launcher(out: Path):
+def build_launcher(out: Path, gui: bool = False):
     gcc = shutil.which("x86_64-w64-mingw32-gcc") or (shutil.which("gcc") if sys.platform == "win32" else None)
     windres = shutil.which("x86_64-w64-mingw32-windres") or (shutil.which("windres") if sys.platform == "win32" else None)
     if not gcc or not windres:
         raise SystemExit("MinGW-w64 (x86_64-w64-mingw32-gcc / windres) が必要です")
     res = out.parent / "launcher.res"
     run([windres, HERE / "launcher.rc", "-O", "coff", "-o", res], cwd=HERE)
-    run([gcc, "-O2", "-municode", "-finput-charset=UTF-8", "-static", "-o", out, HERE / "launcher.c", res])
+    gui_flags = ["-mwindows", "-DGBF_GUI"] if gui else []     # GUI 版はコンソール画面を出さない
+    run([gcc, "-O2", "-municode", "-finput-charset=UTF-8", "-static", *gui_flags, "-o", out, HERE / "launcher.c", res])
     res.unlink()
 
 
@@ -117,6 +119,10 @@ def main():
             z.extractall(site)
     for junk in list(site.rglob("*.pyx")) + list(site.rglob("*.pxd")) + list(site.rglob("*.c")):
         junk.unlink()
+    # ネイティブアプリ用の Qt は使う部分だけ (DLL の依存関係を辿って、足りなければ止まる)
+    sys.path.insert(0, str(HERE))
+    import trim_qt
+    trim_qt.trim(site, stage / "python")
 
     # 3. GBForge 本体
     shutil.copytree(ROOT / "gbforge", site / "gbforge", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
@@ -132,11 +138,13 @@ def main():
     shutil.copytree(gbdk, stage / "gbdk")
 
     # 5. ランチャー・付属ファイル
-    print("== GBForge.exe ==")
-    build_launcher(stage / "GBForge.exe")
+    print("== GBForge.exe / GBForgeCLI.exe ==")
+    build_launcher(stage / "GBForge.exe", gui=True)       # ネイティブアプリ (ウィンドウ)
+    build_launcher(stage / "GBForgeCLI.exe", gui=False)   # コマンドライン・IDE 用
     (stage / "gbforge-shell.cmd").write_text(
         "@echo off\r\nchcp 65001 > nul\r\nset \"PATH=%~dp0;%PATH%\"\r\n"
-        "echo GBForge コマンドライン  (例: GBForge new MyGame / GBForge build MyGame / GBForge doctor)\r\n",
+        "doskey gbforge=\"%~dp0GBForgeCLI.exe\" $*\r\n"
+        "echo GBForge コマンドライン  (例: gbforge new MyGame / gbforge build MyGame / gbforge doctor)\r\n",
         encoding="utf-8")
     shutil.copy(HERE / "LICENSE.txt", stage / "LICENSE.txt")
     shutil.copy(HERE / "README.html", stage / "README.html")

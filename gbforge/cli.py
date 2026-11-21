@@ -242,6 +242,23 @@ def cmd_editor(a):
     serve(path, port=a.port, open_browser=not a.no_browser)
 
 
+def has_qt() -> bool:
+    import importlib.util
+    return importlib.util.find_spec("PySide6") is not None
+
+
+def cmd_app(a):
+    """ネイティブアプリ (Qt)。PySide6 が無ければブラウザ版で開く。"""
+    if a.web or not has_qt():
+        if not a.web:
+            print("PySide6 が無いため、ブラウザ版のエディタで開きます (ネイティブアプリ: pip install PySide6-Essentials)")
+        from .server import serve
+        serve(Path(a.path) if a.path else None)
+        return 0
+    from .app.main import main as app_main
+    return app_main([a.path] if a.path else [])
+
+
 def cmd_setup(a):
     from . import toolchain
     st = toolchain.status()
@@ -398,7 +415,12 @@ def main(argv=None):
     s.add_argument("--scale", type=int, default=3)
     s.set_defaults(fn=cmd_play)
 
-    s = sub.add_parser("editor", help="エディタを起動 (ブラウザで開く)")
+    s = sub.add_parser("app", help="エディタ (ネイティブアプリ) を起動")
+    s.add_argument("path", nargs="?", default=None, help="プロジェクトフォルダ (省略するとスタート画面)")
+    s.add_argument("--web", action="store_true", help="ブラウザ版で開く")
+    s.set_defaults(fn=cmd_app)
+
+    s = sub.add_parser("editor", help="エディタを起動 (ブラウザ版)")
     s.add_argument("path", nargs="?", default=None, help="プロジェクトフォルダ (省略するとスタート画面)")
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--no-browser", action="store_true")
@@ -418,10 +440,10 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     if not argv:
-        argv = ["editor"]
+        argv = ["app"]
     elif len(argv) == 1 and (argv[0].endswith(".gbproj") or Path(argv[0]).is_dir()):
         # project.gbproj のダブルクリック / フォルダのドラッグ&ドロップ → エディタで開く
-        argv = ["editor", str(Path(argv[0]).parent if argv[0].endswith(".gbproj") else argv[0])]
+        argv = ["app", str(Path(argv[0]).parent if argv[0].endswith(".gbproj") else argv[0])]
     a = ap.parse_args(argv)
     try:
         return a.fn(a) or 0

@@ -1,10 +1,14 @@
 /*
- * GBForge.exe — Windows 版ランチャー
+ * GBForge の Windows 版ランチャー。同じソースから 2 つの exe を作る。
  *
- * 同じフォルダの python\python.exe で `python -m gbforge <引数>` を実行する。
- *   GBForge.exe                    → エディタ (スタート画面) をブラウザで開く
- *   GBForge.exe build MyGame       → CLI として使う (Visual Studio / VS Code からも呼ばれる)
- *   GBForge.exe C:\...\project.gbproj → そのプロジェクトをエディタで開く
+ * GBForge.exe (GBF_GUI を定義してビルド、Windows アプリ = コンソール画面なし)
+ *   python\pythonw.exe で `python -m gbforge app <引数>` を実行し、ネイティブアプリのウィンドウを開く。
+ *   GBForge.exe                       → スタート画面
+ *   GBForge.exe C:\...\project.gbproj   → そのプロジェクトを開く
+ *
+ * GBForgeCLI.exe (コンソールアプリ)
+ *   python\python.exe で `python -m gbforge <引数>` を実行する。Visual Studio / VS Code のビルド・コマンドプロンプト用。
+ *   GBForgeCLI.exe build MyGame
  */
 #define WIN32_LEAN_AND_MEAN
 #ifndef UNICODE
@@ -28,8 +32,12 @@ static const wchar_t *skip_argv0(const wchar_t *cmd) {
     return cmd;
 }
 
+#ifdef GBF_GUI
+int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
+#else
 int wmain(void) {
-    wchar_t exe[MAX_PATH], dir[MAX_PATH], python[MAX_PATH];
+#endif
+    wchar_t exe[MAX_PATH], dir[MAX_PATH], python[MAX_PATH], cli[MAX_PATH];
     wchar_t *cmdline;
     const wchar_t *args;
     size_t len;
@@ -41,7 +49,13 @@ int wmain(void) {
     wcscpy(dir, exe);
     wchar_t *slash = wcsrchr(dir, L'\\');
     if (slash) *slash = 0;
+#ifdef GBF_GUI
+    _snwprintf(python, MAX_PATH, L"%s\\python\\pythonw.exe", dir);
+#else
     _snwprintf(python, MAX_PATH, L"%s\\python\\python.exe", dir);
+#endif
+    /* IDE やエミュレーターの起動など、GBForge 自身を呼び出すときはコンソール版を使う */
+    _snwprintf(cli, MAX_PATH, L"%s\\GBForgeCLI.exe", dir);
 
     if (GetFileAttributesW(python) == INVALID_FILE_ATTRIBUTES) {
         MessageBoxW(NULL, L"python\\python.exe が見つかりません。GBForge を再インストールしてください。",
@@ -49,13 +63,17 @@ int wmain(void) {
         return 1;
     }
     SetEnvironmentVariableW(L"GBFORGE_APP_DIR", dir);
-    SetEnvironmentVariableW(L"GBFORGE_LAUNCHER", exe);
+    SetEnvironmentVariableW(L"GBFORGE_LAUNCHER", GetFileAttributesW(cli) != INVALID_FILE_ATTRIBUTES ? cli : exe);
 
     args = skip_argv0(GetCommandLineW());
     len = wcslen(python) + wcslen(args) + 64;
     cmdline = (wchar_t *)HeapAlloc(GetProcessHeap(), 0, len * sizeof(wchar_t));
     /* -E: PYTHON* 環境変数を無視, -s: ユーザー site-packages を無視 (他の Python と干渉しない) */
+#ifdef GBF_GUI
+    _snwprintf(cmdline, len, L"\"%s\" -E -s -m gbforge app %s", python, args);
+#else
     _snwprintf(cmdline, len, L"\"%s\" -E -s -m gbforge %s", python, args);
+#endif
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
@@ -78,6 +96,12 @@ int wmain(void) {
         MessageBoxW(NULL, L"GBForge を起動できませんでした。", L"GBForge", MB_ICONERROR);
         return 1;
     }
+#ifdef GBF_GUI
+    /* ウィンドウの方は起動したら終わってよい (アプリは pythonw.exe で動き続ける) */
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return 0;
+#endif
     WaitForSingleObject(pi.hProcess, INFINITE);
     GetExitCodeProcess(pi.hProcess, &code);
     CloseHandle(pi.hThread);

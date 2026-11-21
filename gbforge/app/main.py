@@ -607,8 +607,8 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     root = None
     pending = None
-    if argv:
-        p = Path(argv[0]).expanduser().resolve()
+    if argv and argv[0]:
+        p = Path(argv[0].strip('"')).expanduser().resolve()
         if p.name == "project.gbproj":
             p = p.parent
         if (p / "project.gbproj").exists():
