@@ -19,7 +19,7 @@
 
 チェックサムは [SHA256SUMS.txt](download/SHA256SUMS.txt) にあります。
 
-今後の更新予定は [TODO.md](TODO.md) にまとめています。
+今後の更新予定は [TODO.md](TODO.md) にまとめています。開発を引き継ぐ人・AI 向けの資料は [docs/HANDOFF.md](docs/HANDOFF.md) です。
 
 ## 今までのプロジェクトを開く
 
