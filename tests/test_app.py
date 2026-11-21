@@ -225,3 +225,77 @@ def test_stage_editor_mouse(app, tmp_path):
     out = (root / "src" / "stage_data.c").read_text(encoding="utf-8")
     assert "stage_lv" in out
     win.close()
+
+
+def wait_media(app, v, timeout=240):
+    end = time.time() + timeout
+    pump(app, 0.3)
+    while (v.building or v.build_timer.isActive() or v.frames is None) and time.time() < end:
+        pump(app, 0.1)
+    assert v.frames is not None, "変換が終わりません"
+
+
+def test_media_studio_native(app, tmp_path):
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+    root = tmp_path / "cm"
+    create_c_project(root, "Media Native", target="cgb")
+    win = window(app, root)
+    r = win.api.post("/api/media/new", {"name": "opening"})
+    v = win.open_tab("media", r["path"])
+    samples = ROOT / "gbforge" / "media" / "samples"
+    v.import_files([str(samples / "astronaut.jpg"), str(samples / "coffee.jpg")])
+    assert len(v.proj["assets"]) == 2 and (root / "media" / "sources" / "astronaut.jpg").exists()
+    a1, a2 = (x["id"] for x in v.proj["assets"])
+    # 素材をクリップとして置く (ドロップと同じ処理) → 黒からフェードイン
+    v.add_clip(a1, 30)
+    v.seek(30)
+    v.fx_type.setCurrentIndex(v.fx_type.findData("fade_in_black"))
+    v.add_fx()
+    v.sc()["palette"] = [{"id": "k0", "frame": 0, "level": -31, "interp": "step"}]
+    v.changed_media()
+    wait_media(app, v)
+    assert v.report and v.report["assets"][0]["tiles"] > 0
+    assert v.frames["levels"][0] == -31 and v.frames["levels"][100] == 0
+    v.seek(120)
+    img = v.screen_image()
+    cols = {img.pixelColor(x, y).getRgb() for x in range(0, 160, 7) for y in range(0, 144, 7)}
+    assert len(cols) > 8                         # 写真が表示されている (真っ黒ではない)
+    # タイムラインのクリップをマウスでドラッグ → 元に戻す
+    clip = v.sc()["media"][0]
+    tl = v.timeline
+    x = int(tl.x_of(clip["start"]) + 20)
+    y = tl.RULER + 10
+    QTest.mousePress(tl, Qt.LeftButton, Qt.NoModifier, QPoint(x, y))
+    QTest.mouseMove(tl, QPoint(x + int(30 * v.zoom), y))
+    QTest.mouseRelease(tl, Qt.LeftButton, Qt.NoModifier, QPoint(x + int(30 * v.zoom), y))
+    assert v.sc()["media"][0]["start"] == 60
+    v.do_undo(False)
+    assert v.sc()["media"][0]["start"] == 30
+    # 変換設定 (スライダー) → 素早いプレビュー
+    v.select(("asset", a1))
+    pump(app, 0.2)
+    assert win.insp_area.widget() is not None
+    end = time.time() + 30
+    while time.time() < end and v.quick_box.count() < 2:
+        pump(app, 0.1)
+    assert v.quick_box.count() >= 2
+    # 再生
+    v.seek(0)
+    v.play()
+    pump(app, 0.5)
+    v.stop()
+    assert v.frame > 5
+    # 保存 → 書き出し
+    v.save(False)
+    saved = json.loads((root / "media" / "opening.gbmedia").read_text(encoding="utf-8"))
+    assert len(saved["scenes"][0]["media"]) == 1
+    v.export()
+    wait_job(app, win)
+    assert (root / "src" / "gbmedia" / "gbmedia_data.c").exists()
+    if builder.find_gbdk(None):
+        pytest.importorskip("pyboy")
+        v.demo(True)
+        wait_job(app, win, 600)
+        assert v.verify_result and "✔" in v.verify_result, v.verify_result
+    win.close()

@@ -17,10 +17,12 @@ from ..local import ApiFail, q
 from ..view import View, register
 
 
-def swatches(palettes) -> QWidget:
+def swatches(palettes, per_row: int = 8) -> QWidget:
+    from PySide6.QtWidgets import QGridLayout
     w = QWidget()
-    lay = QHBoxLayout(w)
+    lay = QGridLayout(w)
     lay.setContentsMargins(0, 0, 0, 0)
+    lay.setHorizontalSpacing(6)
     for i, p in enumerate(palettes):
         g = QWidget()
         gl = QHBoxLayout(g)
@@ -32,8 +34,8 @@ def swatches(palettes) -> QWidget:
             s.setStyleSheet(f"background: rgb({c[0]},{c[1]},{c[2]}); border: 1px solid #3a3c42;")
             gl.addWidget(s)
         g.setToolTip(f"パレット {i}")
-        lay.addWidget(g)
-    lay.addStretch(1)
+        lay.addWidget(g, i // per_row, i % per_row)
+    lay.setColumnStretch(per_row, 1)
     return w
 
 

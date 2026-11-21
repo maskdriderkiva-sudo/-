@@ -107,9 +107,16 @@ class _Task(QRunnable):
             r = self.fn(*self.args, **self.kwargs)
         except Exception as e:  # noqa: BLE001
             e.trace = traceback.format_exc()
-            self.sig.error.emit(e)
+            self._emit(self.sig.error, e)
             return
-        self.sig.done.emit(r)
+        self._emit(self.sig.done, r)
+
+    @staticmethod
+    def _emit(signal, value):
+        try:
+            signal.emit(value)
+        except RuntimeError:     # 画面 (受け取り側) がもう閉じられている
+            pass
 
 
 _keep: set = set()
